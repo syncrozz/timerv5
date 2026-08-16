@@ -1,22 +1,16 @@
-const CACHE_NAME = 'one-tap-timer-v1';
+const CACHE_NAME = 'one-tap-timer-v2';
 const ASSETS_TO_CACHE = [
   '/',
-  '/index.html',
-  '/favicon.svg',
-  '/favicon.ico',
+  'https://raw.githubusercontent.com/syncrozz/syncrozz-assets/main/logo/OneTapTimer/android-chrome-192x192.png',
+  'https://raw.githubusercontent.com/syncrozz/syncrozz-assets/main/logo/OneTapTimer/android-chrome-512x512.png',
+  'https://raw.githubusercontent.com/syncrozz/syncrozz-assets/main/logo/OneTapTimer/apple-touch-icon.png',
+  'https://raw.githubusercontent.com/syncrozz/syncrozz-assets/main/logo/OneTapTimer/favicon-96x96.png',
+  'https://raw.githubusercontent.com/syncrozz/syncrozz-assets/main/logo/OneTapTimer/favicon-32x32.png',
+  'https://raw.githubusercontent.com/syncrozz/syncrozz-assets/main/logo/OneTapTimer/favicon-16x16.png',
+  'https://raw.githubusercontent.com/syncrozz/syncrozz-assets/main/logo/OneTapTimer/favicon.ico',
   '/site.webmanifest',
   '/manifest.json',
-  '/android-chrome-192x192.png',
-  '/android-chrome-512x512.png',
-  '/apple-touch-icon.png',
-  '/favicon-16x16.png',
-  '/favicon-32x32.png',
-  '/favicon-48x48.png',
-  '/favicon-96x96.png',
-  '/mstile-150x150.png',
-  '/web-app-manifest-192x192.png',
-  '/web-app-manifest-512x512.png',
-  '/og-image.png'
+  'https://raw.githubusercontent.com/syncrozz/syncrozz-assets/main/OGI/OGI.One.Tap.Timer.jpg'
 ];
 
 self.addEventListener('install', (event) => {

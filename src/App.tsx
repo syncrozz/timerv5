@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Settings as SettingsIcon, Timer } from 'lucide-react';
+import { Settings as SettingsIcon } from 'lucide-react';
 import { AppSettings, TimerState } from './types';
 import { BUILT_IN_RINGTONES, soundEngine } from './utils/sound';
 import { TimerDisplay } from './components/TimerDisplay';
@@ -172,8 +172,13 @@ export default function App() {
       {/* Header */}
       <header className="w-full max-w-lg mx-auto px-6 pt-6 pb-2 flex items-center justify-between z-10">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/15 text-indigo-300 shadow-xl">
-            <Timer className="w-5 h-5" />
+          <div className="w-10 h-10 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/15 overflow-hidden shadow-xl flex items-center justify-center p-0.5">
+            <img
+              src="https://raw.githubusercontent.com/syncrozz/syncrozz-assets/main/logo/OneTapTimer/android-chrome-192x192.png"
+              alt="One Tap Timer"
+              className="w-full h-full object-contain rounded-xl"
+              referrerPolicy="no-referrer"
+            />
           </div>
           <h1 className="text-lg font-bold tracking-tight text-white">
             One Tap Timer
