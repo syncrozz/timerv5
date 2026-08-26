@@ -255,9 +255,8 @@ export default function App() {
             handleNavigateToSupport();
           }}
           id="footer-support-cta-btn"
-          className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.04] hover:bg-white/[0.08] active:scale-95 text-white/50 hover:text-white/80 text-[11px] font-normal border border-white/5 hover:border-white/15 backdrop-blur-sm transition-all cursor-pointer group"
+          className="inline-flex items-center justify-center px-3 py-1.5 rounded-full bg-white/[0.04] hover:bg-white/[0.08] active:scale-95 text-white/50 hover:text-white/80 text-[11px] font-normal border border-white/5 hover:border-white/15 backdrop-blur-sm transition-all cursor-pointer group"
         >
-          <Heart className="w-3 h-3 text-rose-400/60 fill-rose-400/30 group-hover:fill-rose-400/60 transition-colors" />
           <span>Sokong Inovasi Ini ❤️</span>
         </a>
 
