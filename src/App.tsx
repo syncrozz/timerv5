@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Settings as SettingsIcon } from 'lucide-react';
+import { Settings as SettingsIcon, Heart } from 'lucide-react';
 import { AppSettings, TimerState } from './types';
 import { BUILT_IN_RINGTONES, soundEngine } from './utils/sound';
 import { TimerDisplay } from './components/TimerDisplay';
 import { PresetsBar } from './components/PresetsBar';
 import { SettingsModal } from './components/SettingsModal';
 import { AlarmScreen } from './components/AlarmScreen';
+import { SupportPage } from './components/SupportPage';
 
 const DEFAULT_SETTINGS: AppSettings = {
   defaultMinutes: 5,
@@ -39,8 +40,34 @@ export default function App() {
   const [timeLeftSeconds, setTimeLeftSeconds] = useState(defaultTotalSeconds);
   const [timerState, setTimerState] = useState<TimerState>('idle');
   const [showSettings, setShowSettings] = useState(false);
+  const [isSupportOpen, setIsSupportOpen] = useState(() => {
+    return typeof window !== 'undefined' && window.location.hash === '#support';
+  });
 
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      setIsSupportOpen(window.location.hash === '#support');
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+    };
+  }, []);
+
+  const handleNavigateToSupport = () => {
+    window.location.hash = 'support';
+    setIsSupportOpen(true);
+  };
+
+  const handleReturnFromSupport = () => {
+    if (window.location.hash === '#support') {
+      window.history.pushState(null, '', window.location.pathname + window.location.search);
+    }
+    setIsSupportOpen(false);
+  };
 
   const handleSaveSettings = (newSettings: AppSettings) => {
     setSettings(newSettings);
@@ -162,6 +189,10 @@ export default function App() {
     return found ? found.name : BUILT_IN_RINGTONES[0].name;
   };
 
+  if (isSupportOpen) {
+    return <SupportPage onReturn={handleReturnFromSupport} appName="One Tap Timer" />;
+  }
+
   return (
     <div className="min-h-screen bg-[#030712] text-white flex flex-col justify-between relative overflow-hidden font-sans">
       {/* Ambient Glass Lighting */}
@@ -214,16 +245,34 @@ export default function App() {
         />
       </main>
 
-      {/* Minimal Footer */}
-      <footer className="w-full max-w-lg mx-auto px-6 py-4 text-center z-10">
+      {/* Footer */}
+      <footer className="w-full max-w-lg mx-auto px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-3.5 text-center sm:text-left z-10">
+        {/* Minimal & Understated Support CTA */}
         <a
-          href="https://wasap.my/60145313756"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-xs text-white/40 hover:text-indigo-300 font-medium transition-colors"
+          href="https://syncrozz.com/#support"
+          onClick={(e) => {
+            e.preventDefault();
+            handleNavigateToSupport();
+          }}
+          id="footer-support-cta-btn"
+          className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.04] hover:bg-white/[0.08] active:scale-95 text-white/50 hover:text-white/80 text-[11px] font-normal border border-white/5 hover:border-white/15 backdrop-blur-sm transition-all cursor-pointer group"
         >
-          By Syncrozz
+          <Heart className="w-3 h-3 text-rose-400/60 fill-rose-400/30 group-hover:fill-rose-400/60 transition-colors" />
+          <span>Sokong Inovasi Ini ❤️</span>
         </a>
+
+        {/* Developer Credit */}
+        <p className="text-xs text-white/50 font-normal">
+          Develop By{' '}
+          <a
+            href="https://wasap.my/60145313756"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-white/80 hover:text-indigo-300 font-semibold underline underline-offset-2 transition-colors cursor-pointer"
+          >
+            Syncrozz
+          </a>
+        </p>
       </footer>
 
       {showSettings && (
