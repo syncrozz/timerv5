@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
-import { X, Volume2, Music, Clock, Smartphone, Play, Upload, Check, Vibrate, SunMedium, ShieldAlert } from 'lucide-react';
+import { X, Volume2, Music, Clock, Smartphone, Play, Upload, Check, Vibrate, SunMedium, ShieldAlert, Bell, Activity } from 'lucide-react';
 import { AppSettings, BuiltInRingtoneId } from '../types';
 import { BUILT_IN_RINGTONES, soundEngine } from '../utils/sound';
+import { requestNotificationPermission, getNotificationPermissionStatus, isNotificationSupported } from '../utils/backgroundTimer';
 
 interface SettingsModalProps {
   settings: AppSettings;
@@ -22,9 +23,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [volume, setVolume] = useState(settings.volume);
   const [vibrate, setVibrate] = useState(settings.vibrate);
   const [keepScreenAwake, setKeepScreenAwake] = useState(settings.keepScreenAwake);
+  const [backgroundTimer, setBackgroundTimer] = useState(settings.backgroundTimer ?? true);
+  const [backgroundNotifications, setBackgroundNotifications] = useState(settings.backgroundNotifications ?? true);
+  const [notifPermission, setNotifPermission] = useState(getNotificationPermissionStatus());
   const [theme, setTheme] = useState(settings.theme);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleRequestNotif = async () => {
+    const granted = await requestNotificationPermission();
+    setNotifPermission(getNotificationPermissionStatus());
+    if (granted) {
+      setBackgroundNotifications(true);
+    }
+  };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -66,6 +78,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       volume,
       vibrate,
       keepScreenAwake,
+      backgroundTimer,
+      backgroundNotifications,
       theme,
       autoRestart: false,
     });
@@ -347,14 +361,78 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
           <hr className="border-white/10" />
 
-          {/* Section 4: Mobile Features (Vibration & Screen Wake Lock) */}
+          {/* Section 4: Mobile & Background Features */}
           <div className="space-y-3">
-            <div className="text-sm font-semibold text-white/90">Mobile Preferences</div>
+            <div className="text-sm font-semibold text-white/90">Latar Belakang & Peranti (Background & Device)</div>
+
+            {/* Background Timer */}
+            <div className="flex items-start justify-between p-3.5 rounded-2xl bg-indigo-950/30 border border-indigo-500/30 backdrop-blur-md">
+              <div className="flex items-start gap-3 pr-2">
+                <div className="p-1.5 rounded-xl bg-indigo-500/20 text-indigo-400 mt-0.5">
+                  <Activity className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-white">Teruskan di Latar Belakang (Background Timer)</div>
+                  <div className="text-xs text-white/60 mt-0.5 leading-relaxed">
+                    Masa kekal tepat dan terus berjalan walaupun anda bertukar ke aplikasi lain atau tab diminimumkan.
+                  </div>
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                checked={backgroundTimer}
+                onChange={(e) => setBackgroundTimer(e.target.checked)}
+                id="background-timer-toggle"
+                className="w-5 h-5 accent-indigo-500 rounded cursor-pointer mt-1"
+              />
+            </div>
+
+            {/* Background Notifications */}
+            <div className="flex items-start justify-between p-3.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md">
+              <div className="flex items-start gap-3 pr-2">
+                <div className="p-1.5 rounded-xl bg-amber-500/20 text-amber-400 mt-0.5">
+                  <Bell className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-white/90">Notifikasi Masa Tamat</div>
+                  <div className="text-xs text-white/50 mt-0.5 leading-relaxed">
+                    Hantar amaran notifikasi pada skrin peranti apabila masa tamat semasa membuka aplikasi lain.
+                  </div>
+                  {isNotificationSupported() && notifPermission !== 'granted' && (
+                    <button
+                      type="button"
+                      onClick={handleRequestNotif}
+                      className="mt-2 text-[11px] font-medium text-amber-300 hover:text-amber-200 underline flex items-center gap-1 cursor-pointer"
+                    >
+                      <span>Aktifkan kebenaran notifikasi pelayar</span>
+                    </button>
+                  )}
+                  {isNotificationSupported() && notifPermission === 'granted' && (
+                    <span className="inline-flex items-center gap-1 text-[11px] text-emerald-400 font-medium mt-1.5">
+                      <Check className="w-3 h-3" /> Notifikasi aktif
+                    </span>
+                  )}
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                checked={backgroundNotifications}
+                onChange={(e) => {
+                  const val = e.target.checked;
+                  setBackgroundNotifications(val);
+                  if (val && notifPermission !== 'granted') {
+                    handleRequestNotif();
+                  }
+                }}
+                id="background-notif-toggle"
+                className="w-5 h-5 accent-indigo-500 rounded cursor-pointer mt-1"
+              />
+            </div>
 
             {/* Vibrate */}
             <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md">
               <div className="flex items-center gap-2.5">
-                <Vibrate className="w-4 h-4 text-amber-400" />
+                <Vibrate className="w-4 h-4 text-rose-400" />
                 <div>
                   <div className="text-sm font-medium text-white/90">Vibration Alert</div>
                   <div className="text-xs text-white/40">Vibrate device when timer expires</div>

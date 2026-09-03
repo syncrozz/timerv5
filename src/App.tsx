@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Settings as SettingsIcon, Heart } from 'lucide-react';
+import { Settings as SettingsIcon } from 'lucide-react';
 import { AppSettings, TimerState } from './types';
 import { BUILT_IN_RINGTONES, soundEngine } from './utils/sound';
+import { backgroundTimer, requestNotificationPermission, sendTimerNotification } from './utils/backgroundTimer';
 import { TimerDisplay } from './components/TimerDisplay';
 import { PresetsBar } from './components/PresetsBar';
 import { SettingsModal } from './components/SettingsModal';
@@ -15,6 +16,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   volume: 0.8,
   vibrate: true,
   keepScreenAwake: true,
+  backgroundTimer: true,
+  backgroundNotifications: true,
   theme: 'dark',
   autoRestart: false,
 };
@@ -45,6 +48,65 @@ export default function App() {
   });
 
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+  const endTimeRef = useRef<number | null>(null);
+
+  // Restore running timer from localStorage if page was refreshed or restored after background swap
+  useEffect(() => {
+    try {
+      const savedEndTime = localStorage.getItem('pemasa_target_end_time');
+      const savedState = localStorage.getItem('pemasa_timer_state');
+      const savedTotal = localStorage.getItem('pemasa_total_duration');
+
+      if (savedTotal) {
+        const parsedTotal = parseInt(savedTotal, 10);
+        if (!isNaN(parsedTotal) && parsedTotal > 0) {
+          setTotalDurationSeconds(parsedTotal);
+        }
+      }
+
+      if (savedState === 'running' && savedEndTime) {
+        const end = parseInt(savedEndTime, 10);
+        if (!isNaN(end)) {
+          const remaining = Math.max(0, Math.ceil((end - Date.now()) / 1000));
+          if (remaining > 0) {
+            endTimeRef.current = end;
+            setTimeLeftSeconds(remaining);
+            setTimerState('running');
+          } else {
+            // Time expired while away
+            setTimeLeftSeconds(0);
+            setTimerState('finished');
+            soundEngine.playAlarm(
+              settings.ringtoneId,
+              settings.customRingtoneDataUrl,
+              settings.volume
+            );
+            if (settings.vibrate) {
+              soundEngine.vibrate([600, 300, 600, 300, 600]);
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to restore active timer:', e);
+    }
+  }, [settings.ringtoneId, settings.customRingtoneDataUrl, settings.volume, settings.vibrate]);
+
+  // Keep browser tab title synchronized with countdown
+  useEffect(() => {
+    if (timerState === 'running') {
+      const mins = Math.floor(timeLeftSeconds / 60);
+      const secs = timeLeftSeconds % 60;
+      const timeStr = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+      document.title = `${timeStr} - One Tap Timer`;
+    } else if (timerState === 'finished') {
+      document.title = '⏰ Masa Tamat! - One Tap Timer';
+    } else if (timerState === 'paused') {
+      document.title = '⏸️ Dijeda - One Tap Timer';
+    } else {
+      document.title = 'One Tap Timer';
+    }
+  }, [timerState, timeLeftSeconds]);
 
   useEffect(() => {
     const handleHashChange = () => {
@@ -101,41 +163,121 @@ export default function App() {
     }
   }, []);
 
-  useEffect(() => {
-    let interval: number | null = null;
-
-    if (timerState === 'running') {
-      requestWakeLock();
-
-      interval = window.setInterval(() => {
-        setTimeLeftSeconds((prev) => {
-          if (prev <= 1) {
-            setTimerState('finished');
-            releaseWakeLock();
-
-            soundEngine.playAlarm(
-              settings.ringtoneId,
-              settings.customRingtoneDataUrl,
-              settings.volume
-            );
-
-            if (settings.vibrate) {
-              soundEngine.vibrate([600, 300, 600, 300, 600]);
-            }
-
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    } else {
-      releaseWakeLock();
+  const startTimer = useCallback((secondsToRun: number) => {
+    soundEngine.unlockAudio();
+    if (settings.backgroundNotifications) {
+      requestNotificationPermission().catch(() => {});
     }
 
-    return () => {
-      if (interval) clearInterval(interval);
+    const end = Date.now() + secondsToRun * 1000;
+    endTimeRef.current = end;
+    try {
+      localStorage.setItem('pemasa_target_end_time', String(end));
+      localStorage.setItem('pemasa_total_duration', String(totalDurationSeconds));
+      localStorage.setItem('pemasa_timer_state', 'running');
+    } catch {}
+
+    setTimerState('running');
+  }, [settings.backgroundNotifications, totalDurationSeconds]);
+
+  const pauseTimer = useCallback(() => {
+    if (endTimeRef.current !== null) {
+      const remaining = Math.max(0, Math.ceil((endTimeRef.current - Date.now()) / 1000));
+      setTimeLeftSeconds(remaining);
+    }
+    endTimeRef.current = null;
+    try {
+      localStorage.removeItem('pemasa_target_end_time');
+      localStorage.setItem('pemasa_timer_state', 'paused');
+    } catch {}
+    setTimerState('paused');
+  }, []);
+
+  // Main countdown engine (Web Worker + timestamp-based delta calculations)
+  useEffect(() => {
+    if (timerState !== 'running' || endTimeRef.current === null) {
+      backgroundTimer.stop();
+      releaseWakeLock();
+      return;
+    }
+
+    requestWakeLock();
+
+    const checkTimeRemaining = () => {
+      if (endTimeRef.current === null) return;
+      const now = Date.now();
+      const remainingMs = endTimeRef.current - now;
+      const remainingSec = Math.max(0, Math.ceil(remainingMs / 1000));
+
+      setTimeLeftSeconds(remainingSec);
+
+      if (remainingMs <= 0) {
+        endTimeRef.current = null;
+        try {
+          localStorage.removeItem('pemasa_target_end_time');
+          localStorage.setItem('pemasa_timer_state', 'finished');
+        } catch {}
+
+        setTimerState('finished');
+        releaseWakeLock();
+        backgroundTimer.stop();
+
+        soundEngine.playAlarm(
+          settings.ringtoneId,
+          settings.customRingtoneDataUrl,
+          settings.volume
+        );
+
+        if (settings.vibrate) {
+          soundEngine.vibrate([600, 300, 600, 300, 600]);
+        }
+
+        if (settings.backgroundNotifications) {
+          sendTimerNotification('One Tap Timer', '⏰ Masa telah tamat! Jam penggera sedang berbunyi.');
+        }
+      }
     };
-  }, [timerState, settings, requestWakeLock, releaseWakeLock]);
+
+    // Immediate check
+    checkTimeRemaining();
+
+    // Start background Web Worker timer (runs even when tab is backgrounded)
+    backgroundTimer.start(checkTimeRemaining);
+
+    // Fallback interval on main thread
+    const fallbackInterval = window.setInterval(checkTimeRemaining, 250);
+
+    // Reconcile immediately upon tab swap, app focus, or visibility change
+    const onVisibilityChange = () => {
+      if (!settings.backgroundTimer && document.hidden && timerState === 'running') {
+        pauseTimer();
+      } else {
+        checkTimeRemaining();
+        if (document.visibilityState === 'visible') {
+          requestWakeLock();
+        }
+      }
+    };
+
+    const onWindowFocus = () => {
+      checkTimeRemaining();
+      if (document.visibilityState === 'visible') {
+        requestWakeLock();
+      }
+    };
+
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    window.addEventListener('focus', onWindowFocus);
+    window.addEventListener('pageshow', onWindowFocus);
+
+    return () => {
+      backgroundTimer.stop();
+      if (fallbackInterval) clearInterval(fallbackInterval);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      window.removeEventListener('focus', onWindowFocus);
+      window.removeEventListener('pageshow', onWindowFocus);
+    };
+  }, [timerState, settings, requestWakeLock, releaseWakeLock, pauseTimer]);
 
   const handleMainTap = () => {
     if (settings.vibrate) {
@@ -143,11 +285,11 @@ export default function App() {
     }
 
     if (timerState === 'idle') {
-      setTimerState('running');
+      startTimer(totalDurationSeconds);
     } else if (timerState === 'running') {
-      setTimerState('paused');
+      pauseTimer();
     } else if (timerState === 'paused') {
-      setTimerState('running');
+      startTimer(timeLeftSeconds);
     } else if (timerState === 'finished') {
       handleStopAlarm();
     }
@@ -156,6 +298,11 @@ export default function App() {
   const handleReset = () => {
     soundEngine.stop();
     soundEngine.stopVibration();
+    endTimeRef.current = null;
+    try {
+      localStorage.removeItem('pemasa_target_end_time');
+      localStorage.removeItem('pemasa_timer_state');
+    } catch {}
     setTimerState('idle');
     setTimeLeftSeconds(totalDurationSeconds);
   };
@@ -163,6 +310,11 @@ export default function App() {
   const handleStopAlarm = () => {
     soundEngine.stop();
     soundEngine.stopVibration();
+    endTimeRef.current = null;
+    try {
+      localStorage.removeItem('pemasa_target_end_time');
+      localStorage.removeItem('pemasa_timer_state');
+    } catch {}
     setTimerState('idle');
     setTimeLeftSeconds(totalDurationSeconds);
   };
@@ -171,7 +323,7 @@ export default function App() {
     soundEngine.stop();
     soundEngine.stopVibration();
     setTimeLeftSeconds(totalDurationSeconds);
-    setTimerState('running');
+    startTimer(totalDurationSeconds);
   };
 
   const handleSelectPreset = (mins: number, secs: number) => {
@@ -219,7 +371,7 @@ export default function App() {
         <button
           onClick={() => setShowSettings(true)}
           id="open-settings-btn"
-          className="flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-white/5 hover:bg-white/15 backdrop-blur-md active:scale-95 text-white/90 border border-white/10 shadow-xl transition-all"
+          className="flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-white/5 hover:bg-white/15 backdrop-blur-md active:scale-95 text-white/90 border border-white/10 shadow-xl transition-all cursor-pointer"
         >
           <SettingsIcon className="w-4 h-4 text-indigo-300" />
           <span className="text-xs font-semibold">Settings</span>
@@ -255,9 +407,8 @@ export default function App() {
             handleNavigateToSupport();
           }}
           id="footer-support-cta-btn"
-          className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.04] hover:bg-white/[0.08] active:scale-95 text-white/50 hover:text-white/80 text-[11px] font-normal border border-white/5 hover:border-white/15 backdrop-blur-sm transition-all cursor-pointer group"
+          className="inline-flex items-center justify-center px-3 py-1.5 rounded-full bg-white/[0.04] hover:bg-white/[0.08] active:scale-95 text-white/50 hover:text-white/80 text-[11px] font-normal border border-white/5 hover:border-white/15 backdrop-blur-sm transition-all cursor-pointer group"
         >
-          <Heart className="w-3 h-3 text-rose-400/60 fill-rose-400/30 group-hover:fill-rose-400/60 transition-colors" />
           <span>Sokong Inovasi Ini ❤️</span>
         </a>
 

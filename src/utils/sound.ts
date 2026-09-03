@@ -68,6 +68,64 @@ export const BUILT_IN_RINGTONES: RingtoneOption[] = [
 
 class SoundEngine {
   private currentAudio: HTMLAudioElement | null = null;
+  private audioContext: AudioContext | null = null;
+  private fallbackOscInterval: number | null = null;
+
+  /**
+   * Unlocks AudioContext upon user gesture (tap/click)
+   */
+  public unlockAudio() {
+    try {
+      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      if (AudioCtx && !this.audioContext) {
+        this.audioContext = new AudioCtx();
+      }
+      if (this.audioContext && this.audioContext.state === 'suspended') {
+        this.audioContext.resume();
+      }
+    } catch (e) {
+      console.warn('AudioContext unlock note:', e);
+    }
+  }
+
+  /**
+   * Plays a synthesized urgent beep pattern using Web Audio oscillator
+   * as a robust fallback if HTMLAudioElement is blocked by browser policies.
+   */
+  public startFallbackBeep(volume = 0.8) {
+    this.stopFallbackBeep();
+    try {
+      this.unlockAudio();
+      if (!this.audioContext) return;
+
+      const playTone = () => {
+        if (!this.audioContext || this.audioContext.state === 'closed') return;
+        const osc = this.audioContext.createOscillator();
+        const gain = this.audioContext.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(880, this.audioContext.currentTime); // A5
+        osc.frequency.setValueAtTime(1046.5, this.audioContext.currentTime + 0.15); // C6
+        gain.gain.setValueAtTime(Math.min(1, volume * 0.5), this.audioContext.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + 0.35);
+        osc.connect(gain);
+        gain.connect(this.audioContext.destination);
+        osc.start();
+        osc.stop(this.audioContext.currentTime + 0.35);
+      };
+
+      playTone();
+      this.fallbackOscInterval = window.setInterval(playTone, 800);
+    } catch (err) {
+      console.warn('Fallback beep failed:', err);
+    }
+  }
+
+  public stopFallbackBeep() {
+    if (this.fallbackOscInterval) {
+      clearInterval(this.fallbackOscInterval);
+      this.fallbackOscInterval = null;
+    }
+  }
 
   /**
    * Helper to resolve audio URL from ringtoneId or customDataUrl
@@ -88,6 +146,7 @@ class SoundEngine {
    * Stops any currently playing audio immediately.
    */
   public stop() {
+    this.stopFallbackBeep();
     if (this.currentAudio) {
       try {
         this.currentAudio.pause();
@@ -110,7 +169,10 @@ class SoundEngine {
     this.stop();
 
     const url = this.getAudioUrl(ringtoneId, customDataUrl);
-    if (!url) return;
+    if (!url) {
+      this.startFallbackBeep(volume);
+      return;
+    }
 
     try {
       const audio = new Audio(url);
@@ -122,11 +184,13 @@ class SoundEngine {
       const playPromise = audio.play();
       if (playPromise !== undefined) {
         playPromise.catch((err) => {
-          console.warn('Audio alarm playback failed/blocked:', err);
+          console.warn('Audio alarm playback failed/blocked by browser, starting fallback synth beep:', err);
+          this.startFallbackBeep(volume);
         });
       }
     } catch (err) {
-      console.error('Failed to instantiate Audio for alarm:', err);
+      console.error('Failed to instantiate Audio for alarm, starting fallback:', err);
+      this.startFallbackBeep(volume);
     }
   }
 

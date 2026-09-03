@@ -21,6 +21,8 @@ export interface AppSettings {
   keepScreenAwake: boolean;
   theme: 'dark' | 'light' | 'midnight';
   autoRestart: boolean;
+  backgroundTimer: boolean;
+  backgroundNotifications: boolean;
 }
 
 export interface TimerPreset {
