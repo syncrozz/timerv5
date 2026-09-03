@@ -411,7 +411,7 @@ export default function App() {
             Syncrozz
           </a>
           <a
-            href="https://wa.me/6145313756"
+            href="https://wa.me/60145313756"
             target="_blank"
             rel="noopener noreferrer"
             aria-label="WhatsApp Syncrozz"
