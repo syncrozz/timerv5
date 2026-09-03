@@ -241,17 +241,31 @@ export function SupportPage({ onReturn, appName = 'One Tap Timer' }: SupportPage
 
       {/* Footer */}
       <footer className="w-full max-w-lg mx-auto px-6 py-4 text-center z-10">
-        <p className="text-xs text-white/40">
-          Develop By{' '}
+        <div className="inline-flex items-center justify-center gap-1.5 text-xs text-white/40 font-normal">
+          <span>Developed by</span>
           <a
-            href="https://wasap.my/60145313756"
+            href="https://www.syncrozz.com/"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-white/70 hover:text-indigo-300 font-medium underline underline-offset-2 transition-colors"
+            className="text-white/70 hover:text-indigo-300 font-medium no-underline transition-colors"
           >
             Syncrozz
           </a>
-        </p>
+          <a
+            href="https://wa.me/6145313756"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="WhatsApp Syncrozz"
+            className="inline-flex items-center justify-center opacity-80 hover:opacity-100 hover:scale-105 active:scale-95 transition-all duration-200 ml-0.5"
+          >
+            <img
+              src="https://raw.githubusercontent.com/syncrozz/syncrozz-assets/main/logo/MAIN/Logo%20Whatapp%20v2.png"
+              alt="WhatsApp"
+              className="w-5 h-5 object-contain"
+              referrerPolicy="no-referrer"
+            />
+          </a>
+        </div>
       </footer>
     </div>
   );

@@ -399,6 +399,33 @@ export default function App() {
 
       {/* Footer */}
       <footer className="w-full max-w-lg mx-auto px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-3.5 text-center sm:text-left z-10">
+        {/* Footer Left — Developer Credit */}
+        <div className="flex items-center gap-1.5 text-xs text-white/50 font-normal">
+          <span>Developed by</span>
+          <a
+            href="https://www.syncrozz.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-white/80 hover:text-indigo-300 font-semibold no-underline transition-colors cursor-pointer"
+          >
+            Syncrozz
+          </a>
+          <a
+            href="https://wa.me/6145313756"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="WhatsApp Syncrozz"
+            className="inline-flex items-center justify-center opacity-85 hover:opacity-100 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer ml-0.5"
+          >
+            <img
+              src="https://raw.githubusercontent.com/syncrozz/syncrozz-assets/main/logo/MAIN/Logo%20Whatapp%20v2.png"
+              alt="WhatsApp"
+              className="w-5 h-5 object-contain"
+              referrerPolicy="no-referrer"
+            />
+          </a>
+        </div>
+
         {/* Minimal & Understated Support CTA */}
         <a
           href="https://syncrozz.com/#support"
@@ -411,19 +438,6 @@ export default function App() {
         >
           <span>Sokong Inovasi Ini ❤️</span>
         </a>
-
-        {/* Developer Credit */}
-        <p className="text-xs text-white/50 font-normal">
-          Develop By{' '}
-          <a
-            href="https://wasap.my/60145313756"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-white/80 hover:text-indigo-300 font-semibold underline underline-offset-2 transition-colors cursor-pointer"
-          >
-            Syncrozz
-          </a>
-        </p>
       </footer>
 
       {showSettings && (
