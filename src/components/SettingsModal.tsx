@@ -123,13 +123,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </span>
             </div>
 
-            {/* Quick Preference Buttons (5m, 10m, 15m, 20m, 25m, 30m) */}
-            <div className="space-y-1.5">
-              <span className="text-xs text-white/40 font-medium">Popular Quick Choices:</span>
-              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+            {/* Quick Preference Buttons */}
+            <div className="space-y-2">
+              <span className="text-xs text-white/50 font-medium">Popular Quick Choices:</span>
+              <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
                 {[
                   { m: 1, label: '1m' },
+                  { m: 3, label: '3m' },
                   { m: 5, label: '5m' },
+                  { m: 9, label: '9m' },
                   { m: 10, label: '10m' },
                   { m: 15, label: '15m' },
                   { m: 20, label: '20m' },
@@ -146,10 +148,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       setSeconds(0);
                     }}
                     id={`setting-quick-${item.m}m`}
-                    className={`py-1.5 px-2 text-xs font-semibold rounded-xl transition-all border text-center ${
+                    className={`min-h-[40px] py-2 px-2 text-xs sm:text-sm font-semibold rounded-xl transition-all border text-center flex items-center justify-center cursor-pointer active:scale-95 ${
                       minutes === item.m && seconds === 0
-                        ? 'bg-emerald-600 border-emerald-400 text-white font-bold shadow-md shadow-emerald-600/30'
-                        : 'bg-white/5 border-white/10 text-white/70 hover:bg-white/15 hover:text-white'
+                        ? 'bg-emerald-600 border-emerald-400 text-white font-bold shadow-md shadow-emerald-600/30 ring-2 ring-emerald-400/40'
+                        : 'bg-white/5 border-white/10 text-white/80 hover:bg-white/15 hover:text-white'
                     }`}
                   >
                     {item.label}
@@ -158,75 +160,122 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </div>
             </div>
 
-            {/* Exact Custom Inputs with Steppers */}
-            <div className="grid grid-cols-2 gap-3 pt-1">
-              <div className="p-3 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-md">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-medium text-white/40">Minutes</span>
-                  <div className="flex gap-1">
+            {/* Exact Custom Inputs with Touch-Friendly Steppers */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              {/* Minutes Card */}
+              <div className="p-3.5 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-md flex flex-col justify-between gap-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-white/70 uppercase tracking-wider">Minutes</span>
+                  <div className="flex items-center gap-1.5">
                     <button
                       type="button"
                       onClick={() => setMinutes(Math.max(0, minutes - 1))}
-                      className="px-1.5 py-0.5 text-xs bg-white/10 hover:bg-white/20 rounded text-white/80"
+                      className="min-w-[38px] h-8 px-2 text-xs font-bold bg-white/10 hover:bg-white/20 active:scale-95 rounded-lg text-white border border-white/15 transition-all cursor-pointer flex items-center justify-center"
+                      title="Decrease 1 minute"
                     >
                       -1
                     </button>
                     <button
                       type="button"
                       onClick={() => setMinutes(minutes + 1)}
-                      className="px-1.5 py-0.5 text-xs bg-white/10 hover:bg-white/20 rounded text-white/80"
+                      className="min-w-[38px] h-8 px-2 text-xs font-bold bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 active:scale-95 rounded-lg border border-emerald-500/30 transition-all cursor-pointer flex items-center justify-center"
+                      title="Increase 1 minute"
                     >
                       +1
                     </button>
                     <button
                       type="button"
                       onClick={() => setMinutes(minutes + 5)}
-                      className="px-1.5 py-0.5 text-xs bg-white/10 hover:bg-white/20 rounded text-white/80"
+                      className="min-w-[38px] h-8 px-2 text-xs font-bold bg-white/10 hover:bg-white/20 active:scale-95 rounded-lg text-white border border-white/15 transition-all cursor-pointer flex items-center justify-center"
+                      title="Increase 5 minutes"
                     >
                       +5
                     </button>
                   </div>
                 </div>
-                <input
-                  type="number"
-                  min="0"
-                  max="180"
-                  value={minutes}
-                  onChange={(e) => setMinutes(Math.max(0, parseInt(e.target.value) || 0))}
-                  id="settings-minutes-input"
-                  className="w-full bg-transparent text-2xl font-mono font-bold text-white focus:outline-none"
-                />
+
+                {/* Large Center Input & +/- Steppers */}
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setMinutes(Math.max(0, minutes - 1))}
+                    className="w-11 h-11 rounded-xl bg-white/10 hover:bg-white/20 active:scale-90 text-white font-bold text-xl flex items-center justify-center border border-white/15 transition-all cursor-pointer shrink-0 shadow-sm"
+                    aria-label="Tolak 1 minit"
+                  >
+                    -
+                  </button>
+                  <input
+                    type="number"
+                    min="0"
+                    max="180"
+                    value={minutes}
+                    onChange={(e) => setMinutes(Math.max(0, parseInt(e.target.value) || 0))}
+                    id="settings-minutes-input"
+                    className="flex-1 min-w-0 h-11 bg-black/30 border border-white/20 rounded-xl text-center text-2xl font-mono font-bold text-white focus:outline-none focus:border-emerald-400 transition-colors"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setMinutes(minutes + 1)}
+                    className="w-11 h-11 rounded-xl bg-white/10 hover:bg-white/20 active:scale-90 text-white font-bold text-xl flex items-center justify-center border border-white/15 transition-all cursor-pointer shrink-0 shadow-sm"
+                    aria-label="Tambah 1 minit"
+                  >
+                    +
+                  </button>
+                </div>
               </div>
 
-              <div className="p-3 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-md">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-medium text-white/40">Seconds</span>
-                  <div className="flex gap-1">
+              {/* Seconds Card */}
+              <div className="p-3.5 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-md flex flex-col justify-between gap-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-white/70 uppercase tracking-wider">Seconds</span>
+                  <div className="flex items-center gap-1.5">
                     <button
                       type="button"
                       onClick={() => setSeconds(Math.max(0, seconds - 5))}
-                      className="px-1.5 py-0.5 text-xs bg-white/10 hover:bg-white/20 rounded text-white/80"
+                      className="min-w-[38px] h-8 px-2 text-xs font-bold bg-white/10 hover:bg-white/20 active:scale-95 rounded-lg text-white border border-white/15 transition-all cursor-pointer flex items-center justify-center"
+                      title="Decrease 5 seconds"
                     >
                       -5
                     </button>
                     <button
                       type="button"
                       onClick={() => setSeconds(Math.min(59, seconds + 5))}
-                      className="px-1.5 py-0.5 text-xs bg-white/10 hover:bg-white/20 rounded text-white/80"
+                      className="min-w-[38px] h-8 px-2 text-xs font-bold bg-white/10 hover:bg-white/20 active:scale-95 rounded-lg text-white border border-white/15 transition-all cursor-pointer flex items-center justify-center"
+                      title="Increase 5 seconds"
                     >
                       +5
                     </button>
                   </div>
                 </div>
-                <input
-                  type="number"
-                  min="0"
-                  max="59"
-                  value={seconds}
-                  onChange={(e) => setSeconds(Math.min(59, Math.max(0, parseInt(e.target.value) || 0)))}
-                  id="settings-seconds-input"
-                  className="w-full bg-transparent text-2xl font-mono font-bold text-white focus:outline-none"
-                />
+
+                {/* Large Center Input & +/- Steppers */}
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSeconds(Math.max(0, seconds - 5))}
+                    className="w-11 h-11 rounded-xl bg-white/10 hover:bg-white/20 active:scale-90 text-white font-bold text-xl flex items-center justify-center border border-white/15 transition-all cursor-pointer shrink-0 shadow-sm"
+                    aria-label="Tolak 5 saat"
+                  >
+                    -
+                  </button>
+                  <input
+                    type="number"
+                    min="0"
+                    max="59"
+                    value={seconds}
+                    onChange={(e) => setSeconds(Math.min(59, Math.max(0, parseInt(e.target.value) || 0)))}
+                    id="settings-seconds-input"
+                    className="flex-1 min-w-0 h-11 bg-black/30 border border-white/20 rounded-xl text-center text-2xl font-mono font-bold text-white focus:outline-none focus:border-emerald-400 transition-colors"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setSeconds(Math.min(59, seconds + 5))}
+                    className="w-11 h-11 rounded-xl bg-white/10 hover:bg-white/20 active:scale-90 text-white font-bold text-xl flex items-center justify-center border border-white/15 transition-all cursor-pointer shrink-0 shadow-sm"
+                    aria-label="Tambah 5 saat"
+                  >
+                    +
+                  </button>
+                </div>
               </div>
             </div>
 

@@ -10,7 +10,9 @@ interface PresetsBarProps {
 }
 
 const PRESETS: TimerPreset[] = [
+  { label: '3 Minutes', minutes: 3, seconds: 0 },
   { label: '5 Minutes', minutes: 5, seconds: 0 },
+  { label: '9 Minutes', minutes: 9, seconds: 0 },
   { label: '10 Minutes', minutes: 10, seconds: 0 },
   { label: '15 Minutes', minutes: 15, seconds: 0 },
   { label: '20 Minutes', minutes: 20, seconds: 0 },
